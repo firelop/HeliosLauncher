@@ -25,6 +25,7 @@
   "dependencies": {
     "@electron/remote": "^2.1.0",
     "adm-zip": "^0.5.9",
+    "azuriom-auth": "^1.0.1",
     "discord-rpc-patch": "^4.0.1",
     "ejs": "^3.1.9",
     "ejs-electron": "^2.1.1",
@@ -40,7 +41,7 @@
     "toml": "^3.0.0"
   },
   "devDependencies": {
-    "electron": "^27.1.3",
+    "electron": "^27.2.4",
     "electron-builder": "^24.9.1",
     "eslint": "^8.56.0"
   },

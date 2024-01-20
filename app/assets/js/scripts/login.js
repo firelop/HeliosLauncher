@@ -19,7 +19,7 @@ const loginButton           = document.getElementById('loginButton')
 const loginForm             = document.getElementById('loginForm')
 
 // Control variables.
-let lu = false, lp = false
+let lu = false, lp = false, account_type = 0 // Account type: 0 Mojang, 1 GalaxyQuest
 
 
 /**
@@ -187,48 +187,95 @@ loginButton.addEventListener('click', () => {
     // Show loading stuff.
     loginLoading(true)
 
-    AuthManager.addMojangAccount(loginUsername.value, loginPassword.value).then((value) => {
-        updateSelectedAccount(value)
-        loginButton.innerHTML = loginButton.innerHTML.replace(Lang.queryJS('login.loggingIn'), Lang.queryJS('login.success'))
-        $('.circle-loader').toggleClass('load-complete')
-        $('.checkmark').toggle()
-        setTimeout(() => {
-            switchView(VIEWS.login, loginViewOnSuccess, 500, 500, async () => {
-                // Temporary workaround
-                if(loginViewOnSuccess === VIEWS.settings){
-                    await prepareSettings()
-                }
-                loginViewOnSuccess = VIEWS.landing // Reset this for good measure.
-                loginCancelEnabled(false) // Reset this for good measure.
-                loginViewCancelHandler = null // Reset this for good measure.
-                loginUsername.value = ''
-                loginPassword.value = ''
-                $('.circle-loader').toggleClass('load-complete')
-                $('.checkmark').toggle()
-                loginLoading(false)
-                loginButton.innerHTML = loginButton.innerHTML.replace(Lang.queryJS('login.success'), Lang.queryJS('login.login'))
+    if(account_type == 0) {
+        AuthManager.addMojangAccount(loginUsername.value, loginPassword.value).then((value) => {
+            updateSelectedAccount(value)
+            loginButton.innerHTML = loginButton.innerHTML.replace(Lang.queryJS('login.loggingIn'), Lang.queryJS('login.success'))
+            $('.circle-loader').toggleClass('load-complete')
+            $('.checkmark').toggle()
+            setTimeout(() => {
+                switchView(VIEWS.login, loginViewOnSuccess, 500, 500, async () => {
+                    // Temporary workaround
+                    if(loginViewOnSuccess === VIEWS.settings){
+                        await prepareSettings()
+                    }
+                    loginViewOnSuccess = VIEWS.landing // Reset this for good measure.
+                    loginCancelEnabled(false) // Reset this for good measure.
+                    loginViewCancelHandler = null // Reset this for good measure.
+                    loginUsername.value = ''
+                    loginPassword.value = ''
+                    $('.circle-loader').toggleClass('load-complete')
+                    $('.checkmark').toggle()
+                    loginLoading(false)
+                    loginButton.innerHTML = loginButton.innerHTML.replace(Lang.queryJS('login.success'), Lang.queryJS('login.login'))
+                    formDisabled(false)
+                })
+            }, 1000)
+        }).catch((displayableError) => {
+            loginLoading(false)
+
+            let actualDisplayableError
+            if(isDisplayableError(displayableError)) {
+                msftLoginLogger.error('Error while logging in.', displayableError)
+                actualDisplayableError = displayableError
+            } else {
+                // Uh oh.
+                msftLoginLogger.error('Unhandled error during login.', displayableError)
+                actualDisplayableError = Lang.queryJS('login.error.unknown')
+            }
+
+            setOverlayContent(actualDisplayableError.title, actualDisplayableError.desc, Lang.queryJS('login.tryAgain'))
+            setOverlayHandler(() => {
                 formDisabled(false)
+                toggleOverlay(false)
             })
-        }, 1000)
-    }).catch((displayableError) => {
-        loginLoading(false)
-
-        let actualDisplayableError
-        if(isDisplayableError(displayableError)) {
-            msftLoginLogger.error('Error while logging in.', displayableError)
-            actualDisplayableError = displayableError
-        } else {
-            // Uh oh.
-            msftLoginLogger.error('Unhandled error during login.', displayableError)
-            actualDisplayableError = Lang.queryJS('login.error.unknown')
-        }
-
-        setOverlayContent(actualDisplayableError.title, actualDisplayableError.desc, Lang.queryJS('login.tryAgain'))
-        setOverlayHandler(() => {
-            formDisabled(false)
-            toggleOverlay(false)
+            toggleOverlay(true)
         })
-        toggleOverlay(true)
-    })
+    } else {
+        AuthManager.addGalaxyQuestAccount(loginUsername.value, loginPassword.value).then((value) => {
+            updateSelectedAccount(value)
+            loginButton.innerHTML = loginButton.innerHTML.replace(Lang.queryJS('login.loggingIn'), Lang.queryJS('login.success'))
+            $('.circle-loader').toggleClass('load-complete')
+            $('.checkmark').toggle()
+            setTimeout(() => {
+                switchView(VIEWS.login, loginViewOnSuccess, 500, 500, async () => {
+                    // Temporary workaround
+                    if(loginViewOnSuccess === VIEWS.settings){
+                        await prepareSettings()
+                    }
+                    loginViewOnSuccess = VIEWS.landing // Reset this for good measure.
+                    loginCancelEnabled(false) // Reset this for good measure.
+                    loginViewCancelHandler = null // Reset this for good measure.
+                    loginUsername.value = ''
+                    loginPassword.value = ''
+                    $('.circle-loader').toggleClass('load-complete')
+                    $('.checkmark').toggle()
+                    loginLoading(false)
+                    loginButton.innerHTML = loginButton.innerHTML.replace(Lang.queryJS('login.success'), Lang.queryJS('login.login'))
+                    formDisabled(false)
+                })
+            }, 1000)
+        }).catch((displayableError) => {
+            loginLoading(false)
+
+            let actualDisplayableError
+            if(isDisplayableError(displayableError)) {
+                msftLoginLogger.error('Error while logging in.', displayableError)
+                actualDisplayableError = displayableError
+            } else {
+                // Uh oh.
+                msftLoginLogger.error('Unhandled error during login.', displayableError)
+                actualDisplayableError = Lang.queryJS('login.error.unknown')
+            }
+
+            setOverlayContent(actualDisplayableError.title, actualDisplayableError.desc, Lang.queryJS('login.tryAgain'))
+            setOverlayHandler(() => {
+                formDisabled(false)
+                toggleOverlay(false)
+            })
+            toggleOverlay(true)
+        })
+
+    }
 
 })

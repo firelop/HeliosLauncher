@@ -15,6 +15,8 @@ const { RestResponseStatus } = require('helios-core/common')
 const { MojangRestAPI, mojangErrorDisplayable, MojangErrorCode } = require('helios-core/mojang')
 const { MicrosoftAuth, microsoftErrorDisplayable, MicrosoftErrorCode } = require('helios-core/microsoft')
 const { AZURE_CLIENT_ID }    = require('./ipcconstants')
+const { AuthClient } = require('azuriom-auth')
+
 
 const log = LoggerUtil.getLogger('AuthManager')
 
@@ -56,6 +58,48 @@ exports.addMojangAccount = async function(username, password) {
         return Promise.reject(mojangErrorDisplayable(MojangErrorCode.UNKNOWN))
     }
 }
+
+/**
+ * Add a GalaxyQuest account. This will authenticate the given credentials with GalaxyQuest's
+ * authserver. The resultant data will be stored as an auth account in the
+ * configuration database.
+ * 
+ * @param {string} username The account username.
+ * @param {string} password The account password.
+ * @returns {Promise.<Object>} Promise which resolves the resolved authenticated account object.
+ */
+exports.addGalaxyQuestAccount = async function(username, password) {
+    try {
+        const client = new AuthClient('https://galaxyquest.fr')
+        let result = await client.login(username, password)
+
+        console.log(result)
+        if (result.status === 'pending' && result.requires2fa) {
+            const twoFactorCode = '' // IMPORTANT: Replace with the 2FA user temporary code
+    
+            result = await client.login(username, password, twoFactorCode)
+        }
+    
+        if (result.status !== 'success') {
+            log.error('Unexpected result: ' + JSON.stringify(result))
+            return Promise.reject(mojangErrorDisplayable(MojangErrorCode.ERROR_INVALID_CREDENTIALS))
+        }
+
+
+        const ret = ConfigManager.addGalaxyQuestAuthAccount(result.uuid, result.accessToken, result.username, result.username)
+        if(ConfigManager.getClientToken() == null){
+            ConfigManager.setClientToken(result.accessToken)
+        }
+        ConfigManager.save()
+        return ret
+
+        
+    } catch (err){
+        log.error(err)
+        return Promise.reject(mojangErrorDisplayable(MojangErrorCode.UNKNOWN))
+    }
+}
+
 
 const AUTH_MODE = { FULL: 0, MS_REFRESH: 1, MC_REFRESH: 2 }
 
